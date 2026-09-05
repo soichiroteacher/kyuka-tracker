@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>休暇管理アプリ</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <header class="app-header">
+    <div class="header-title">
+      <h1>休暇管理</h1>
+      <p class="subtitle">東京都教職員向け 年休・特別休暇トラッカー</p>
+    </div>
+    <div class="year-selector">
+      <label for="year-select">年度</label>
+      <select id="year-select"></select>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="dashboard">ダッシュボード</button>
+    <button class="tab-btn" data-tab="records">記録一覧</button>
+    <button class="tab-btn" data-tab="settings">設定</button>
+  </nav>
+
+  <main>
+    <section id="tab-dashboard" class="tab-panel active">
+      <div class="panel-toolbar">
+        <button id="btn-add-record" class="btn-primary">＋ 休暇記録を追加</button>
+      </div>
+      <div id="dashboard-cards" class="cards-grid"></div>
+    </section>
+
+    <section id="tab-records" class="tab-panel">
+      <div class="panel-toolbar">
+        <select id="filter-type"><option value="">すべての種別</option></select>
+        <button id="btn-add-record-2" class="btn-primary">＋ 記録を追加</button>
+      </div>
+      <div class="table-wrap">
+        <table id="records-table">
+          <thead>
+            <tr><th>日付</th><th>種別</th><th>量</th><th>メモ</th><th></th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <p id="records-empty" class="empty-msg hidden">この年度の記録はまだありません。</p>
+      </div>
+    </section>
+
+    <section id="tab-settings" class="tab-panel">
+      <h2>基本設定</h2>
+      <div class="settings-row">
+        <label for="fiscal-start-month">年度の開始月</label>
+        <select id="fiscal-start-month"></select>
+        <span class="hint">通常、年次有給休暇は暦年(1月始まり)で管理されます。所属先の運用に合わせて変更できます。</span>
+      </div>
+
+      <h2>休暇種別の設定</h2>
+      <p class="hint">初期値は一般的な地方公務員・東京都教職員の休暇制度を参考にした目安です。実際の付与日数・時間数は所属の規程を確認のうえ調整してください。</p>
+      <div class="table-wrap">
+        <table id="types-table">
+          <thead>
+            <tr>
+              <th>種別名</th><th>単位</th><th>年間付与量</th><th>繰越上限</th><th>色</th><th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <button id="btn-add-type" class="btn-secondary">＋ 種別を追加</button>
+
+      <h2>データ管理</h2>
+      <div class="data-actions">
+        <button id="btn-export" class="btn-secondary">エクスポート(JSON)</button>
+        <button id="btn-import" class="btn-secondary">インポート(JSON)</button>
+        <input type="file" id="import-file" accept="application/json" class="hidden">
+        <button id="btn-reset" class="btn-danger">全データを削除</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="modal-overlay" class="modal-overlay hidden">
+  <div class="modal">
+    <h3 id="record-modal-title">休暇記録を追加</h3>
+    <form id="record-form">
+      <input type="hidden" id="record-id">
+      <label>日付
+        <input type="date" id="record-date" required>
+      </label>
+      <label>種別
+        <select id="record-type" required></select>
+      </label>
+      <label>量 (<span id="record-unit-label">日</span>)
+        <input type="number" id="record-amount" step="0.5" min="0" required>
+      </label>
+      <label>メモ
+        <textarea id="record-note" rows="2"></textarea>
+      </label>
+      <div class="modal-actions">
+        <button type="button" id="record-cancel" class="btn-secondary">キャンセル</button>
+        <button type="submit" class="btn-primary">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="js/storage.js"></script>
+<script src="js/calc.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
