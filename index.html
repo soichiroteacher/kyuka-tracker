@@ -27,7 +27,7 @@
 
   <main>
     <section id="tab-dashboard" class="tab-panel active">
-      <p class="hint">休暇はすべて1時間単位で記録します(都の勤務時間 1日=7時間45分を基準に換算)。選択した年度の「取得時間数」と「残り時間数」を種別ごとに表示しています。</p>
+      <p class="hint">休暇は「日」または「時間」単位で記録できます(都の勤務時間 1日=7時間45分を基準に換算)。選択した年度の「取得時間数」と「残り時間数」を種別ごとに表示しています。</p>
       <div class="panel-toolbar">
         <button id="btn-add-record" class="btn-primary">＋ 休暇記録を追加</button>
       </div>
@@ -59,7 +59,7 @@
       </div>
 
       <h2>休暇種別の設定</h2>
-      <p class="hint">休暇はすべて1時間単位・時間数で管理します。初期値は都の勤務時間(1日=7時間45分)を基準に、一般的な地方公務員・東京都教職員の休暇制度を時間換算した目安です。実際の付与時間数は所属の規程を確認のうえ調整してください。「年サイクル」は、その種別が何月始まりで切り替わるかの設定です。子の看護休暇など、基本設定の年度と別に暦年(1月始まり)で切り替わる休暇は個別に指定できます。</p>
+      <p class="hint">休暇の記録は「日」または「時間」単位で入力できますが、内部では都の勤務時間(1日=7時間45分)を基準に時間数へ統一して管理します。初期値は一般的な地方公務員・東京都教職員の休暇制度を時間換算した目安です。実際の付与時間数は所属の規程を確認のうえ調整してください。「年サイクル」は、その種別が何月始まりで切り替わるかの設定です。子の看護休暇など、基本設定の年度と別に暦年(1月始まり)で切り替わる休暇は個別に指定できます。</p>
       <div class="table-wrap">
         <table id="types-table">
           <thead>
@@ -95,8 +95,14 @@
       <label>種別
         <select id="record-type" required></select>
       </label>
-      <label>時間数(1時間単位)
-        <input type="number" id="record-amount" step="1" min="1" required>
+      <label>取得単位
+        <select id="record-unit">
+          <option value="day">日</option>
+          <option value="hour">時間</option>
+        </select>
+      </label>
+      <label>量(<span id="record-amount-unit-label">日</span>)
+        <input type="number" id="record-amount" step="0.5" min="0.5" required>
       </label>
       <label>メモ
         <textarea id="record-note" rows="2"></textarea>

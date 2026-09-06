@@ -29,6 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target.id === "modal-overlay") closeRecordModal();
   });
   document.getElementById("record-form").addEventListener("submit", handleRecordFormSubmit);
+  document.getElementById("record-unit").addEventListener("change", updateRecordAmountUnitUI);
 
   // 記録一覧: フィルタと行アクション
   document.getElementById("filter-type").addEventListener("change", renderRecordsTable);

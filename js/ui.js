@@ -139,6 +139,23 @@ function populateRecordTypeSelect() {
   sel.innerHTML = appData.leaveTypes.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join("");
 }
 
+// 記録は内部的には常に時間数で保持する。入力時だけ「日」か「時間」を選べ、
+// 「日」を選んだ場合は都の勤務時間(1日=7時間45分)で時間数に換算して保存する。
+function updateRecordAmountUnitUI() {
+  const unit = document.getElementById("record-unit").value;
+  const amountInput = document.getElementById("record-amount");
+  const label = document.getElementById("record-amount-unit-label");
+  if (unit === "day") {
+    label.textContent = "日";
+    amountInput.step = "0.5";
+    amountInput.min = "0.5";
+  } else {
+    label.textContent = "時間";
+    amountInput.step = "1";
+    amountInput.min = "1";
+  }
+}
+
 function openRecordModal(record) {
   populateRecordTypeSelect();
   editingRecordId = record ? record.id : null;
@@ -146,6 +163,10 @@ function openRecordModal(record) {
   document.getElementById("record-id").value = record ? record.id : "";
   document.getElementById("record-date").value = record ? record.date : new Date().toISOString().slice(0, 10);
   document.getElementById("record-type").value = record ? record.typeId : (appData.leaveTypes[0] ? appData.leaveTypes[0].id : "");
+  // 編集時は保存済みの正確な時間数をそのまま扱えるよう「時間」単位で表示する。
+  // 新規追加時は「1日単位で取る」ケースが基本のため「日」をデフォルトにする。
+  document.getElementById("record-unit").value = record ? "hour" : "day";
+  updateRecordAmountUnitUI();
   document.getElementById("record-amount").value = record ? record.amount : 1;
   document.getElementById("record-note").value = record ? (record.note || "") : "";
   document.getElementById("modal-overlay").classList.remove("hidden");
@@ -161,10 +182,17 @@ function handleRecordFormSubmit(e) {
   e.preventDefault();
   const date = document.getElementById("record-date").value;
   const typeId = document.getElementById("record-type").value;
-  const amount = parseInt(document.getElementById("record-amount").value, 10);
+  const unit = document.getElementById("record-unit").value;
+  const rawAmount = parseFloat(document.getElementById("record-amount").value);
   const note = document.getElementById("record-note").value.trim();
 
-  if (!date || !typeId || isNaN(amount) || amount <= 0) return;
+  if (!date || !typeId || isNaN(rawAmount) || rawAmount <= 0) return;
+
+  // 「日」入力は都の勤務時間(1日=7時間45分)で時間数に換算。
+  // 「時間」入力は1時間単位に丸めて保存する。
+  const amount = unit === "day"
+    ? Math.round(rawAmount * HOURS_PER_DAY * 100) / 100
+    : Math.round(rawAmount);
 
   if (editingRecordId) {
     const rec = appData.records.find(r => r.id === editingRecordId);
