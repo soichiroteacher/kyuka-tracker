@@ -193,6 +193,10 @@ button {
 .leave-card.low .remaining { color: var(--color-warn); }
 .leave-card.empty .remaining { color: var(--color-danger); }
 
+.leave-card .cycle-note {
+  font-style: italic;
+}
+
 .table-wrap {
   overflow-x: auto;
   background: var(--color-surface);
@@ -243,6 +247,9 @@ h2 {
   color: var(--color-text-muted);
   font-size: 0.8rem;
 }
+
+.hint.status-ok { color: var(--color-ok); }
+.hint.status-error { color: var(--color-danger); }
 
 .data-actions {
   display: flex;

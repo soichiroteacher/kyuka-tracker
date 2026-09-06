@@ -11,8 +11,11 @@ function currentYearFromToday() {
 }
 
 function getAvailableYears() {
-  const startMonth = appData.settings.fiscalYearStartMonth;
-  const recordYears = appData.records.map(r => yearOfDate(r.date, startMonth));
+  const recordYears = appData.records.map(r => {
+    const type = findType(r.typeId);
+    const startMonth = type ? effectiveStartMonth(appData, type) : appData.settings.fiscalYearStartMonth;
+    return yearOfDate(r.date, startMonth);
+  });
   const thisYear = currentYearFromToday();
   const years = new Set([thisYear - 1, thisYear, thisYear + 1, ...recordYears]);
   return Array.from(years).sort((a, b) => b - a);
@@ -65,18 +68,26 @@ function renderDashboard() {
       else if (total > 0 && balance.remaining / total <= 0.2) stateClass = "low";
     }
     const remainingHtml = unlimited
-      ? `<div class="remaining">${formatAmount(balance.used, type.unit)}<small> 使用</small></div>`
-      : `<div class="remaining">${formatAmount(balance.remaining, type.unit)}<small> 残り</small></div>`;
+      ? `<div class="remaining">${formatAmount(balance.used)}<small> 取得</small></div>`
+      : `<div class="remaining">${formatAmount(balance.remaining)}<small> 残り</small></div>`;
+    const totalAvailable = unlimited ? 0 : balance.granted + balance.carryover;
+    const grantHtml = balance.carryover > 0
+      ? `付与 ${formatAmount(balance.granted)} + 繰越 ${formatAmount(balance.carryover)} = ${formatAmount(totalAvailable)}(${formatAsDaysHint(totalAvailable)})`
+      : `付与 ${formatAmount(balance.granted)}(${formatAsDaysHint(totalAvailable)})`;
     const detailHtml = unlimited
-      ? `<div class="detail">付与上限なし(利用実績の記録用)</div>`
-      : `<div class="detail">付与 ${formatAmount(balance.granted, type.unit)}${balance.carryover > 0 ? ` + 繰越 ${formatAmount(balance.carryover, type.unit)}` : ""} / 使用 ${formatAmount(balance.used, type.unit)}</div>`;
+      ? `<div class="detail">付与上限なし(利用実績の記録用) / 今年度取得 ${formatAmount(balance.used)}</div>`
+      : `<div class="detail">${grantHtml} / 今年度取得 ${formatAmount(balance.used)}</div>`;
     const barHtml = unlimited ? "" : `<div class="progress-bar"><div style="width:${barPct}%"></div></div>`;
+    const cycleHtml = type.cycleStartMonth
+      ? `<div class="detail cycle-note">サイクル: ${cycleRangeLabel(effectiveStartMonth(appData, type))}(個別設定)</div>`
+      : "";
     return `
       <div class="leave-card ${stateClass}" style="--card-color:${type.color || "#2563eb"}">
         <h3>${escapeHtml(type.name)}</h3>
         ${remainingHtml}
         ${detailHtml}
         ${barHtml}
+        ${cycleHtml}
       </div>`;
   }).join("");
 }
@@ -92,10 +103,13 @@ function populateFilterType() {
 }
 
 function renderRecordsTable() {
-  const startMonth = appData.settings.fiscalYearStartMonth;
   const filterType = document.getElementById("filter-type").value;
   const tbody = document.querySelector("#records-table tbody");
-  let records = appData.records.filter(r => yearOfDate(r.date, startMonth) === currentYear);
+  let records = appData.records.filter(r => {
+    const type = findType(r.typeId);
+    const startMonth = type ? effectiveStartMonth(appData, type) : appData.settings.fiscalYearStartMonth;
+    return yearOfDate(r.date, startMonth) === currentYear;
+  });
   if (filterType) records = records.filter(r => r.typeId === filterType);
   records = records.slice().sort((a, b) => b.date.localeCompare(a.date));
 
@@ -104,12 +118,11 @@ function renderRecordsTable() {
   tbody.innerHTML = records.map(r => {
     const type = findType(r.typeId);
     const typeName = type ? escapeHtml(type.name) : "(削除された種別)";
-    const unit = type ? type.unit : "day";
     return `
       <tr data-id="${r.id}">
         <td>${r.date}</td>
         <td>${typeName}</td>
-        <td>${formatAmount(r.amount, unit)}</td>
+        <td>${formatAmount(r.amount)}</td>
         <td class="note-cell">${escapeHtml(r.note || "")}</td>
         <td>
           <button class="icon-btn btn-edit-record" data-id="${r.id}" title="編集">✎</button>
@@ -126,12 +139,6 @@ function populateRecordTypeSelect() {
   sel.innerHTML = appData.leaveTypes.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join("");
 }
 
-function updateRecordUnitLabel() {
-  const typeId = document.getElementById("record-type").value;
-  const type = findType(typeId);
-  document.getElementById("record-unit-label").textContent = type ? unitLabel(type.unit) : "日";
-}
-
 function openRecordModal(record) {
   populateRecordTypeSelect();
   editingRecordId = record ? record.id : null;
@@ -141,7 +148,6 @@ function openRecordModal(record) {
   document.getElementById("record-type").value = record ? record.typeId : (appData.leaveTypes[0] ? appData.leaveTypes[0].id : "");
   document.getElementById("record-amount").value = record ? record.amount : 1;
   document.getElementById("record-note").value = record ? (record.note || "") : "";
-  updateRecordUnitLabel();
   document.getElementById("modal-overlay").classList.remove("hidden");
   document.getElementById("record-date").focus();
 }
@@ -155,7 +161,7 @@ function handleRecordFormSubmit(e) {
   e.preventDefault();
   const date = document.getElementById("record-date").value;
   const typeId = document.getElementById("record-type").value;
-  const amount = parseFloat(document.getElementById("record-amount").value);
+  const amount = parseInt(document.getElementById("record-amount").value, 10);
   const note = document.getElementById("record-note").value.trim();
 
   if (!date || !typeId || isNaN(amount) || amount <= 0) return;
@@ -173,7 +179,8 @@ function handleRecordFormSubmit(e) {
   }
   saveData(appData);
   closeRecordModal();
-  currentYear = yearOfDate(date, appData.settings.fiscalYearStartMonth);
+  const type = findType(typeId);
+  currentYear = yearOfDate(date, type ? effectiveStartMonth(appData, type) : appData.settings.fiscalYearStartMonth);
   refreshAll();
 }
 
@@ -193,21 +200,62 @@ function populateFiscalMonthSelect() {
   sel.value = String(appData.settings.fiscalYearStartMonth);
 }
 
+// ---------- 設定: Googleドライブ同期 ----------
+
+function populateDriveSettings() {
+  const input = document.getElementById("google-client-id");
+  if (document.activeElement !== input) {
+    input.value = appData.settings.googleClientId || "";
+  }
+  renderDriveStatus();
+}
+
+function renderDriveStatus() {
+  const statusEl = document.getElementById("drive-status");
+  const connectBtn = document.getElementById("btn-drive-connect");
+  const syncBtn = document.getElementById("btn-drive-sync-now");
+  const disconnectBtn = document.getElementById("btn-drive-disconnect");
+  if (!statusEl) return;
+
+  connectBtn.classList.toggle("hidden", driveState.connected);
+  syncBtn.classList.toggle("hidden", !driveState.connected);
+  disconnectBtn.classList.toggle("hidden", !driveState.connected);
+
+  statusEl.classList.remove("status-ok", "status-error");
+  if (driveState.error) {
+    statusEl.textContent = driveState.error;
+    statusEl.classList.add("status-error");
+  } else if (driveState.syncing) {
+    statusEl.textContent = "同期中...";
+  } else if (driveState.connected) {
+    const time = driveState.lastSyncedAt
+      ? new Date(driveState.lastSyncedAt).toLocaleString("ja-JP")
+      : "-";
+    statusEl.textContent = `接続済み(最終同期: ${time})`;
+    statusEl.classList.add("status-ok");
+  } else {
+    statusEl.textContent = "未接続(このブラウザ内にのみ保存されています)";
+  }
+}
+
 // ---------- 設定: 休暇種別テーブル ----------
+
+function cycleStartMonthOptions(selected) {
+  const followOption = `<option value="" ${!selected ? "selected" : ""}>基本設定に従う</option>`;
+  const monthOptions = Array.from({ length: 12 }, (_, i) => i + 1)
+    .map(m => `<option value="${m}" ${selected === m ? "selected" : ""}>${m}月始まり</option>`)
+    .join("");
+  return followOption + monthOptions;
+}
 
 function renderTypesTable() {
   const tbody = document.querySelector("#types-table tbody");
   tbody.innerHTML = appData.leaveTypes.map(t => `
     <tr class="types-table" data-id="${t.id}">
       <td><input type="text" class="type-name" value="${escapeHtml(t.name)}"></td>
-      <td>
-        <select class="type-unit">
-          <option value="day" ${t.unit === "day" ? "selected" : ""}>日</option>
-          <option value="hour" ${t.unit === "hour" ? "selected" : ""}>時間</option>
-        </select>
-      </td>
-      <td><input type="number" class="type-grant" step="0.5" min="0" placeholder="上限なし" value="${t.annualGrant ?? ""}"></td>
-      <td><input type="number" class="type-carryover" step="0.5" min="0" placeholder="なし" value="${t.carryoverMax ?? ""}"></td>
+      <td><input type="number" class="type-grant" step="0.25" min="0" placeholder="上限なし" value="${t.annualGrant ?? ""}"></td>
+      <td><input type="number" class="type-carryover" step="0.25" min="0" placeholder="なし" value="${t.carryoverMax ?? ""}"></td>
+      <td><select class="type-cycle">${cycleStartMonthOptions(t.cycleStartMonth || null)}</select></td>
       <td><input type="color" class="type-color" value="${t.color || "#2563eb"}"></td>
       <td><button class="icon-btn btn-delete-type" title="削除">🗑</button></td>
     </tr>
@@ -220,16 +268,16 @@ function readTypesFromTable() {
   rows.forEach(row => {
     const id = row.dataset.id;
     const name = row.querySelector(".type-name").value.trim() || "(無題)";
-    const unit = row.querySelector(".type-unit").value;
     const grantRaw = row.querySelector(".type-grant").value;
     const carryoverRaw = row.querySelector(".type-carryover").value;
+    const cycleRaw = row.querySelector(".type-cycle").value;
     const color = row.querySelector(".type-color").value;
     types.push({
       id,
       name,
-      unit,
       annualGrant: grantRaw === "" ? null : parseFloat(grantRaw),
       carryoverMax: carryoverRaw === "" ? null : parseFloat(carryoverRaw),
+      cycleStartMonth: cycleRaw === "" ? null : parseInt(cycleRaw, 10),
       color
     });
   });
@@ -246,9 +294,9 @@ function addNewType() {
   appData.leaveTypes.push({
     id: uid(),
     name: "新しい休暇種別",
-    unit: "day",
     annualGrant: null,
     carryoverMax: null,
+    cycleStartMonth: null,
     color: "#2563eb"
   });
   saveData(appData);
@@ -278,9 +326,7 @@ function handleImportFile(file) {
         throw new Error("invalid format");
       }
       if (!confirm("現在のデータを、インポートするファイルの内容で上書きします。よろしいですか？")) return;
-      appData = parsed;
-      if (!appData.settings) appData.settings = { fiscalYearStartMonth: 1 };
-      if (!appData.manualGrants) appData.manualGrants = {};
+      appData = migrateLeaveData(parsed);
       saveData(appData);
       currentYear = currentYearFromToday();
       refreshAll();
@@ -315,4 +361,5 @@ function refreshAll() {
   renderRecordsTable();
   renderTypesTable();
   populateFiscalMonthSelect();
+  populateDriveSettings();
 }

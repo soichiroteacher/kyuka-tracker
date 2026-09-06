@@ -27,6 +27,7 @@
 
   <main>
     <section id="tab-dashboard" class="tab-panel active">
+      <p class="hint">休暇はすべて1時間単位で記録します(都の勤務時間 1日=7時間45分を基準に換算)。選択した年度の「取得時間数」と「残り時間数」を種別ごとに表示しています。</p>
       <div class="panel-toolbar">
         <button id="btn-add-record" class="btn-primary">＋ 休暇記録を追加</button>
       </div>
@@ -41,7 +42,7 @@
       <div class="table-wrap">
         <table id="records-table">
           <thead>
-            <tr><th>日付</th><th>種別</th><th>量</th><th>メモ</th><th></th></tr>
+            <tr><th>日付</th><th>種別</th><th>時間数</th><th>メモ</th><th></th></tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -58,12 +59,12 @@
       </div>
 
       <h2>休暇種別の設定</h2>
-      <p class="hint">初期値は一般的な地方公務員・東京都教職員の休暇制度を参考にした目安です。実際の付与日数・時間数は所属の規程を確認のうえ調整してください。</p>
+      <p class="hint">休暇はすべて1時間単位・時間数で管理します。初期値は都の勤務時間(1日=7時間45分)を基準に、一般的な地方公務員・東京都教職員の休暇制度を時間換算した目安です。実際の付与時間数は所属の規程を確認のうえ調整してください。「年サイクル」は、その種別が何月始まりで切り替わるかの設定です。子の看護休暇など、基本設定の年度と別に暦年(1月始まり)で切り替わる休暇は個別に指定できます。</p>
       <div class="table-wrap">
         <table id="types-table">
           <thead>
             <tr>
-              <th>種別名</th><th>単位</th><th>年間付与量</th><th>繰越上限</th><th>色</th><th></th>
+              <th>種別名</th><th>年間付与量(時間)</th><th>繰越上限(時間)</th><th>年サイクル</th><th>色</th><th></th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -78,6 +79,19 @@
         <input type="file" id="import-file" accept="application/json" class="hidden">
         <button id="btn-reset" class="btn-danger">全データを削除</button>
       </div>
+
+      <h2>Googleドライブ同期(データの保存先)</h2>
+      <p class="hint">アプリ本体はGitHub等で公開していても、休暇の記録データ自体はご自身のGoogleドライブに保存できます。このアプリが作成した1つのファイルにしかアクセスしない最小権限(drive.fileスコープ)で連携するため、ドライブ内の他のファイルには一切触れません。</p>
+      <div class="settings-row">
+        <label for="google-client-id">Google OAuthクライアントID</label>
+        <input type="text" id="google-client-id" placeholder="xxxxxxxx.apps.googleusercontent.com">
+      </div>
+      <div class="data-actions">
+        <button id="btn-drive-connect" class="btn-secondary">Googleドライブに接続</button>
+        <button id="btn-drive-sync-now" class="btn-secondary hidden">今すぐ同期</button>
+        <button id="btn-drive-disconnect" class="btn-secondary hidden">接続を解除</button>
+      </div>
+      <p id="drive-status" class="hint">未接続(このブラウザ内にのみ保存されています)</p>
     </section>
   </main>
 </div>
@@ -93,8 +107,8 @@
       <label>種別
         <select id="record-type" required></select>
       </label>
-      <label>量 (<span id="record-unit-label">日</span>)
-        <input type="number" id="record-amount" step="0.5" min="0" required>
+      <label>時間数(1時間単位)
+        <input type="number" id="record-amount" step="1" min="1" required>
       </label>
       <label>メモ
         <textarea id="record-note" rows="2"></textarea>
@@ -107,9 +121,11 @@
   </div>
 </div>
 
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="js/storage.js"></script>
 <script src="js/calc.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/drive-sync.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>
