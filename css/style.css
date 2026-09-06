@@ -248,9 +248,6 @@ h2 {
   font-size: 0.8rem;
 }
 
-.hint.status-ok { color: var(--color-ok); }
-.hint.status-error { color: var(--color-danger); }
-
 .data-actions {
   display: flex;
   gap: 10px;

@@ -72,8 +72,8 @@ function renderDashboard() {
       : `<div class="remaining">${formatAmount(balance.remaining)}<small> 残り</small></div>`;
     const totalAvailable = unlimited ? 0 : balance.granted + balance.carryover;
     const grantHtml = balance.carryover > 0
-      ? `付与 ${formatAmount(balance.granted)} + 繰越 ${formatAmount(balance.carryover)} = ${formatAmount(totalAvailable)}(${formatAsDaysHint(totalAvailable)})`
-      : `付与 ${formatAmount(balance.granted)}(${formatAsDaysHint(totalAvailable)})`;
+      ? `付与 ${formatAmount(balance.granted)} + 繰越 ${formatAmount(balance.carryover)} = ${formatAmount(totalAvailable)}`
+      : `付与 ${formatAmount(balance.granted)}`;
     const detailHtml = unlimited
       ? `<div class="detail">付与上限なし(利用実績の記録用) / 今年度取得 ${formatAmount(balance.used)}</div>`
       : `<div class="detail">${grantHtml} / 今年度取得 ${formatAmount(balance.used)}</div>`;
@@ -200,44 +200,6 @@ function populateFiscalMonthSelect() {
   sel.value = String(appData.settings.fiscalYearStartMonth);
 }
 
-// ---------- 設定: Googleドライブ同期 ----------
-
-function populateDriveSettings() {
-  const input = document.getElementById("google-client-id");
-  if (document.activeElement !== input) {
-    input.value = appData.settings.googleClientId || "";
-  }
-  renderDriveStatus();
-}
-
-function renderDriveStatus() {
-  const statusEl = document.getElementById("drive-status");
-  const connectBtn = document.getElementById("btn-drive-connect");
-  const syncBtn = document.getElementById("btn-drive-sync-now");
-  const disconnectBtn = document.getElementById("btn-drive-disconnect");
-  if (!statusEl) return;
-
-  connectBtn.classList.toggle("hidden", driveState.connected);
-  syncBtn.classList.toggle("hidden", !driveState.connected);
-  disconnectBtn.classList.toggle("hidden", !driveState.connected);
-
-  statusEl.classList.remove("status-ok", "status-error");
-  if (driveState.error) {
-    statusEl.textContent = driveState.error;
-    statusEl.classList.add("status-error");
-  } else if (driveState.syncing) {
-    statusEl.textContent = "同期中...";
-  } else if (driveState.connected) {
-    const time = driveState.lastSyncedAt
-      ? new Date(driveState.lastSyncedAt).toLocaleString("ja-JP")
-      : "-";
-    statusEl.textContent = `接続済み(最終同期: ${time})`;
-    statusEl.classList.add("status-ok");
-  } else {
-    statusEl.textContent = "未接続(このブラウザ内にのみ保存されています)";
-  }
-}
-
 // ---------- 設定: 休暇種別テーブル ----------
 
 function cycleStartMonthOptions(selected) {
@@ -361,5 +323,4 @@ function refreshAll() {
   renderRecordsTable();
   renderTypesTable();
   populateFiscalMonthSelect();
-  populateDriveSettings();
 }

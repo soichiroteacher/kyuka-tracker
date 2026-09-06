@@ -76,18 +76,4 @@ document.addEventListener("DOMContentLoaded", () => {
     e.target.value = "";
   });
   document.getElementById("btn-reset").addEventListener("click", resetAllData);
-
-  // Googleドライブ同期
-  document.getElementById("btn-drive-connect").addEventListener("click", () => {
-    const clientId = document.getElementById("google-client-id").value.trim();
-    if (!clientId) {
-      alert("Google OAuthクライアントIDを入力してください。");
-      return;
-    }
-    connectGoogleDrive(clientId);
-  });
-  document.getElementById("btn-drive-sync-now").addEventListener("click", manualDriveSync);
-  document.getElementById("btn-drive-disconnect").addEventListener("click", disconnectGoogleDrive);
-
-  initDriveSync();
 });

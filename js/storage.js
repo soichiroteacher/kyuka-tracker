@@ -95,9 +95,6 @@ function loadData() {
 
 function saveData(data) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  // Googleドライブ同期が有効な場合、js/drive-sync.js がこのフックを使って
-  // 変更を自動的にドライブへ反映する(未接続時は何もしない)。
-  if (typeof onDataSaved === "function") onDataSaved(data);
 }
 
 function exportDataToFile(data) {

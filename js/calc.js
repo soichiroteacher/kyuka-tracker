@@ -94,13 +94,23 @@ function earliestRelevantYear(data, type, targetYear) {
   return Math.max(minRecordYear, targetYear - 5);
 }
 
+// 時間数を「〇日〇時間〇分」形式で表示する。都の勤務時間(1日=7時間45分=465分)を
+// 基準に日・時間・分へ分解するので、分数値になりがちな端数もきれいな分単位で表せる。
 function formatAmount(hours) {
-  const rounded = Math.round(hours * 100) / 100;
-  return `${rounded}時間`;
-}
+  const MINUTES_PER_DAY = HOURS_PER_DAY * 60;
+  const sign = hours < 0 ? "-" : "";
+  let totalMinutes = Math.round(Math.abs(hours) * 60);
 
-// 時間数を日換算した目安の表示(例: 155時間 → 約20.0日相当)
-function formatAsDaysHint(hours) {
-  const days = Math.round((hours / HOURS_PER_DAY) * 10) / 10;
-  return `約${days}日相当`;
+  const days = Math.floor(totalMinutes / MINUTES_PER_DAY);
+  totalMinutes -= days * MINUTES_PER_DAY;
+  const hrs = Math.floor(totalMinutes / 60);
+  const mins = totalMinutes % 60;
+
+  const parts = [];
+  if (days > 0) parts.push(`${days}日`);
+  if (hrs > 0) parts.push(`${hrs}時間`);
+  if (mins > 0) parts.push(`${mins}分`);
+  if (parts.length === 0) parts.push("0時間");
+
+  return sign + parts.join("");
 }

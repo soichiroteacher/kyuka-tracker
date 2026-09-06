@@ -79,19 +79,7 @@
         <input type="file" id="import-file" accept="application/json" class="hidden">
         <button id="btn-reset" class="btn-danger">全データを削除</button>
       </div>
-
-      <h2>Googleドライブ同期(データの保存先)</h2>
-      <p class="hint">アプリ本体はGitHub等で公開していても、休暇の記録データ自体はご自身のGoogleドライブに保存できます。このアプリが作成した1つのファイルにしかアクセスしない最小権限(drive.fileスコープ)で連携するため、ドライブ内の他のファイルには一切触れません。</p>
-      <div class="settings-row">
-        <label for="google-client-id">Google OAuthクライアントID</label>
-        <input type="text" id="google-client-id" placeholder="xxxxxxxx.apps.googleusercontent.com">
-      </div>
-      <div class="data-actions">
-        <button id="btn-drive-connect" class="btn-secondary">Googleドライブに接続</button>
-        <button id="btn-drive-sync-now" class="btn-secondary hidden">今すぐ同期</button>
-        <button id="btn-drive-disconnect" class="btn-secondary hidden">接続を解除</button>
-      </div>
-      <p id="drive-status" class="hint">未接続(このブラウザ内にのみ保存されています)</p>
+      <p class="hint">データはこの端末のブラウザ内にのみ保存されます。端末を変える場合やブラウザのデータを消去する前には、エクスポートしておいてください。</p>
     </section>
   </main>
 </div>
@@ -121,11 +109,9 @@
   </div>
 </div>
 
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="js/storage.js"></script>
 <script src="js/calc.js"></script>
 <script src="js/ui.js"></script>
-<script src="js/drive-sync.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>
