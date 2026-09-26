@@ -235,10 +235,12 @@ function updateRecordAmountUnitUI() {
   const unit = document.getElementById("record-unit").value;
   const amountInput = document.getElementById("record-amount");
   const label = document.getElementById("record-amount-unit-label");
+  // 休暇は「〇日」か「〇時間」のどちらかで取る(半日という取り方はない。2026-09-27 ユーザー確認)。
+  // そのため、日も時間も1単位刻みにする。
   if (unit === "day") {
     label.textContent = "日";
-    amountInput.step = "0.5";
-    amountInput.min = "0.5";
+    amountInput.step = "1";
+    amountInput.min = "1";
   } else {
     label.textContent = "時間";
     amountInput.step = "1";
@@ -284,9 +286,8 @@ function openRecordModal(record) {
   updateRecordAmountUnitUI();
   const amountInput = document.getElementById("record-amount");
   amountInput.value = quantity;
-  // 古いデータに刻みに合わない値が残っていても、開いただけで入力エラーにならないようにする。
-  const step = unit === "day" ? 0.5 : 1;
-  if (!Number.isInteger(quantity / step)) amountInput.step = "any";
+  // 古いデータに刻みに合わない値(以前は入力できた0.5日など)が残っていても、開いただけで入力エラーにならないようにする。
+  if (!Number.isInteger(quantity)) { amountInput.step = "any"; amountInput.min = "0"; }
 
   document.getElementById("record-note").value = record ? (record.note || "") : "";
   document.getElementById("modal-overlay").classList.remove("hidden");
@@ -309,10 +310,10 @@ function handleRecordFormSubmit(e) {
 
   if (!date || !typeId || isNaN(rawAmount) || rawAmount <= 0) return;
 
-  // 「日」入力は都の勤務時間(1日=7時間45分)で時間数に換算(0.25時間刻みは2進数で正確に
-  // 表せるので丸めない)。「時間」入力は1時間単位に丸めて保存する。
-  let quantity = unit === "day" ? rawAmount : Math.round(rawAmount);
-  let amount = unit === "day" ? rawAmount * HOURS_PER_DAY : quantity;
+  // 「日」も「時間」も1単位で取るので、整数に丸める。「日」は都の勤務時間(1日=7時間45分)で
+  // 時間数に換算して保存する(7.75 は2進数で正確に表せるので、足し引きしても誤差が出ない)。
+  let quantity = Math.round(rawAmount);
+  let amount = unit === "day" ? quantity * HOURS_PER_DAY : quantity;
 
   // 単位も数量も変えていない編集(メモの修正など)では、保存済みの時間数を変えない。
   if (editingRecordId && editingOriginal && unit === editingOriginal.unit && rawAmount === editingOriginal.quantity) {
