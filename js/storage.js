@@ -101,9 +101,8 @@ function exportDataToFile(data) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  const today = new Date().toISOString().slice(0, 10);
   a.href = url;
-  a.download = `kyuka-data-${today}.json`;
+  a.download = `kyuka-data-${localDateStr()}.json`;
   document.body.appendChild(a);
   a.click();
   a.remove();

@@ -4,6 +4,15 @@
 // 「〇日」相当の付与量をこの係数で時間数に換算する。
 const HOURS_PER_DAY = 7.75;
 
+// ローカル(日本時間など、端末の時刻)基準の "YYYY-MM-DD"。
+// toISOString() はUTC基準のため、日本時間の朝9時前だと前日の日付になってしまう。
+function localDateStr(d) {
+  const date = d || new Date();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${mm}-${dd}`;
+}
+
 // 指定した日付が、年度開始月(startMonth)を基準にどの年度に属するかを返す。
 function yearOfDate(dateStr, startMonth) {
   const d = new Date(dateStr + "T00:00:00");

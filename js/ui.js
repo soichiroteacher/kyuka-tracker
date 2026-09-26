@@ -5,9 +5,7 @@ let currentYear = null;
 let editingRecordId = null;
 
 function currentYearFromToday() {
-  const today = new Date();
-  const todayStr = today.toISOString().slice(0, 10);
-  return yearOfDate(todayStr, appData.settings.fiscalYearStartMonth);
+  return yearOfDate(localDateStr(), appData.settings.fiscalYearStartMonth);
 }
 
 function getAvailableYears() {
@@ -75,8 +73,8 @@ function renderDashboard() {
       ? `付与 ${formatAmount(balance.granted)} + 繰越 ${formatAmount(balance.carryover)} = ${formatAmount(totalAvailable)}`
       : `付与 ${formatAmount(balance.granted)}`;
     const detailHtml = unlimited
-      ? `<div class="detail">付与上限なし(利用実績の記録用) / 今年度取得 ${formatAmount(balance.used)}</div>`
-      : `<div class="detail">${grantHtml} / 今年度取得 ${formatAmount(balance.used)}</div>`;
+      ? `<div class="detail">付与上限なし(利用実績の記録用)</div>`
+      : `<div class="detail">${grantHtml} / 取得 ${formatAmount(balance.used)}</div>`;
     const barHtml = unlimited ? "" : `<div class="progress-bar"><div style="width:${barPct}%"></div></div>`;
     const cycleHtml = type.cycleStartMonth
       ? `<div class="detail cycle-note">サイクル: ${cycleRangeLabel(effectiveStartMonth(appData, type))}(個別設定)</div>`
@@ -156,18 +154,48 @@ function updateRecordAmountUnitUI() {
   }
 }
 
+// 編集画面に表示する「入力時の単位と数量」を求める。
+// 新しい記録は入力時の単位・数量(inputUnit / inputQuantity)を持つ。
+// 古い記録には無いので、ちょうど整数日ぶんなら「日」、それ以外は「時間」として扱う。
+function describeRecordInput(record) {
+  if (record.inputUnit && typeof record.inputQuantity === "number") {
+    return { unit: record.inputUnit, quantity: record.inputQuantity };
+  }
+  const days = record.amount / HOURS_PER_DAY;
+  if (Number.isInteger(days)) return { unit: "day", quantity: days };
+  return { unit: "hour", quantity: record.amount };
+}
+
+// 編集を開いた時点の入力値。画面上で何も変えずに保存した場合は、保存済みの時間数を
+// 丸めずにそのまま残すために使う。
+let editingOriginal = null;
+
 function openRecordModal(record) {
   populateRecordTypeSelect();
   editingRecordId = record ? record.id : null;
   document.getElementById("record-modal-title").textContent = record ? "休暇記録を編集" : "休暇記録を追加";
   document.getElementById("record-id").value = record ? record.id : "";
-  document.getElementById("record-date").value = record ? record.date : new Date().toISOString().slice(0, 10);
+  document.getElementById("record-date").value = record ? record.date : localDateStr();
   document.getElementById("record-type").value = record ? record.typeId : (appData.leaveTypes[0] ? appData.leaveTypes[0].id : "");
-  // 編集時は保存済みの正確な時間数をそのまま扱えるよう「時間」単位で表示する。
+
   // 新規追加時は「1日単位で取る」ケースが基本のため「日」をデフォルトにする。
-  document.getElementById("record-unit").value = record ? "hour" : "day";
+  let unit = "day";
+  let quantity = 1;
+  editingOriginal = null;
+  if (record) {
+    const described = describeRecordInput(record);
+    unit = described.unit;
+    quantity = described.quantity;
+    editingOriginal = { unit, quantity, amount: record.amount };
+  }
+  document.getElementById("record-unit").value = unit;
   updateRecordAmountUnitUI();
-  document.getElementById("record-amount").value = record ? record.amount : 1;
+  const amountInput = document.getElementById("record-amount");
+  amountInput.value = quantity;
+  // 古いデータに刻みに合わない値が残っていても、開いただけで入力エラーにならないようにする。
+  const step = unit === "day" ? 0.5 : 1;
+  if (!Number.isInteger(quantity / step)) amountInput.step = "any";
+
   document.getElementById("record-note").value = record ? (record.note || "") : "";
   document.getElementById("modal-overlay").classList.remove("hidden");
   document.getElementById("record-date").focus();
@@ -176,6 +204,7 @@ function openRecordModal(record) {
 function closeRecordModal() {
   document.getElementById("modal-overlay").classList.add("hidden");
   editingRecordId = null;
+  editingOriginal = null;
 }
 
 function handleRecordFormSubmit(e) {
@@ -188,11 +217,16 @@ function handleRecordFormSubmit(e) {
 
   if (!date || !typeId || isNaN(rawAmount) || rawAmount <= 0) return;
 
-  // 「日」入力は都の勤務時間(1日=7時間45分)で時間数に換算。
-  // 「時間」入力は1時間単位に丸めて保存する。
-  const amount = unit === "day"
-    ? Math.round(rawAmount * HOURS_PER_DAY * 100) / 100
-    : Math.round(rawAmount);
+  // 「日」入力は都の勤務時間(1日=7時間45分)で時間数に換算(0.25時間刻みは2進数で正確に
+  // 表せるので丸めない)。「時間」入力は1時間単位に丸めて保存する。
+  let quantity = unit === "day" ? rawAmount : Math.round(rawAmount);
+  let amount = unit === "day" ? rawAmount * HOURS_PER_DAY : quantity;
+
+  // 単位も数量も変えていない編集(メモの修正など)では、保存済みの時間数を変えない。
+  if (editingRecordId && editingOriginal && unit === editingOriginal.unit && rawAmount === editingOriginal.quantity) {
+    quantity = editingOriginal.quantity;
+    amount = editingOriginal.amount;
+  }
 
   if (editingRecordId) {
     const rec = appData.records.find(r => r.id === editingRecordId);
@@ -200,10 +234,12 @@ function handleRecordFormSubmit(e) {
       rec.date = date;
       rec.typeId = typeId;
       rec.amount = amount;
+      rec.inputUnit = unit;
+      rec.inputQuantity = quantity;
       rec.note = note;
     }
   } else {
-    appData.records.push({ id: uid(), date, typeId, amount, note, createdAt: Date.now() });
+    appData.records.push({ id: uid(), date, typeId, amount, inputUnit: unit, inputQuantity: quantity, note, createdAt: Date.now() });
   }
   saveData(appData);
   closeRecordModal();
@@ -257,7 +293,9 @@ function readTypesFromTable() {
   const types = [];
   rows.forEach(row => {
     const id = row.dataset.id;
-    const name = row.querySelector(".type-name").value.trim() || "(無題)";
+    const nameInput = row.querySelector(".type-name");
+    const name = nameInput.value.trim() || "(無題)";
+    if (nameInput.value !== name) nameInput.value = name;
     const grantRaw = row.querySelector(".type-grant").value;
     const carryoverRaw = row.querySelector(".type-carryover").value;
     const cycleRaw = row.querySelector(".type-cycle").value;
@@ -277,7 +315,8 @@ function readTypesFromTable() {
 function saveTypesFromTable() {
   appData.leaveTypes = readTypesFromTable();
   saveData(appData);
-  refreshAll();
+  // 表そのものは再描画しない(再描画すると、次の入力欄へ移った直後にフォーカスが外れる)。
+  refreshAll({ keepTypesTable: true });
 }
 
 function addNewType() {
@@ -344,11 +383,11 @@ function escapeHtml(str) {
   }[ch]));
 }
 
-function refreshAll() {
+function refreshAll(options) {
   populateYearSelect();
   populateFilterType();
   renderDashboard();
   renderRecordsTable();
-  renderTypesTable();
+  if (!(options && options.keepTypesTable)) renderTypesTable();
   populateFiscalMonthSelect();
 }
