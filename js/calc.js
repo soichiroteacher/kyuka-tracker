@@ -53,21 +53,31 @@ function usedInYear(data, type, year) {
     .reduce((sum, r) => sum + r.amount, 0);
 }
 
+function hasOwn(obj, key) {
+  return !!obj && Object.prototype.hasOwnProperty.call(obj, key);
+}
+
+// 年度ごとの手動調整(付与量・繰越)のキー。
+function adjustmentKey(year, typeId) {
+  return `${year}_${typeId}`;
+}
+
+// その年度の付与量。手動で調整されていればそれを優先し、なければ設定の年間付与量。
 function grantForYear(data, type, year) {
-  const key = `${year}_${type.id}`;
-  if (Object.prototype.hasOwnProperty.call(data.manualGrants, key)) {
-    return data.manualGrants[key];
-  }
+  const key = adjustmentKey(year, type.id);
+  if (hasOwn(data.manualGrants, key)) return data.manualGrants[key];
   return type.annualGrant;
 }
 
 // 指定年度の付与量・繰越・使用量・残量を計算する。
-// 繰越がある種別は、記録が存在する最も古い年度(なければ対象年度)まで遡って再帰的に計算する。
+// 繰越は、手動で入力されていればそれを使い、なければ前年度の残りから自動計算する
+// (自動計算は、記録・手動調整が存在する最も古い年度まで遡って再帰的に計算する)。
 function computeBalance(data, type, year, _cache) {
   const cache = _cache || {};
   const cacheKey = `${type.id}_${year}`;
   if (cache[cacheKey]) return cache[cacheKey];
 
+  const key = adjustmentKey(year, type.id);
   const grant = grantForYear(data, type, year);
   const used = usedInYear(data, type, year);
 
@@ -77,49 +87,73 @@ function computeBalance(data, type, year, _cache) {
     return result;
   }
 
-  let carryover = 0;
+  let autoCarryover = 0;
   if (type.carryoverMax) {
     const prevYear = year - 1;
     const earliestYear = earliestRelevantYear(data, type, year);
     if (prevYear >= earliestYear) {
       const prev = computeBalance(data, type, prevYear, cache);
       if (prev.remaining !== null) {
-        carryover = Math.max(0, Math.min(prev.remaining, type.carryoverMax));
+        autoCarryover = Math.max(0, Math.min(prev.remaining, type.carryoverMax));
       }
     }
   }
 
+  const hasCarryoverOverride = hasOwn(data.manualCarryovers, key);
+  const carryover = hasCarryoverOverride ? data.manualCarryovers[key] : autoCarryover;
+
   const remaining = grant + carryover - used;
-  const result = { granted: grant, carryover, used, remaining };
+  const result = {
+    granted: grant,
+    carryover,
+    autoCarryover,
+    hasGrantOverride: hasOwn(data.manualGrants, key),
+    hasCarryoverOverride,
+    used,
+    remaining
+  };
   cache[cacheKey] = result;
   return result;
 }
 
-// 繰越計算の起点(無限に遡らないよう、記録の最古年度か対象年度の5年前の遅い方まで)
+// 繰越計算の起点(無限に遡らないよう、記録・手動調整の最古年度か対象年度の5年前の遅い方まで)
 function earliestRelevantYear(data, type, targetYear) {
   const startMonth = effectiveStartMonth(data, type);
   const years = recordsForType(data, type.id).map(r => yearOfDate(r.date, startMonth));
-  const minRecordYear = years.length ? Math.min(...years) : targetYear;
-  return Math.max(minRecordYear, targetYear - 5);
+  const suffix = `_${type.id}`;
+  [data.manualGrants, data.manualCarryovers].forEach(map => {
+    Object.keys(map || {}).forEach(key => {
+      if (key.endsWith(suffix)) years.push(parseInt(key, 10));
+    });
+  });
+  const minYear = years.length ? Math.min(...years) : targetYear;
+  return Math.max(minYear, targetYear - 5);
 }
 
 // 時間数を「〇日〇時間〇分」形式で表示する。都の勤務時間(1日=7時間45分=465分)を
 // 基準に日・時間・分へ分解するので、分数値になりがちな端数もきれいな分単位で表せる。
-function formatAmount(hours) {
+function splitAmount(hours) {
   const MINUTES_PER_DAY = HOURS_PER_DAY * 60;
-  const sign = hours < 0 ? "-" : "";
+  const negative = hours < 0;
   let totalMinutes = Math.round(Math.abs(hours) * 60);
 
   const days = Math.floor(totalMinutes / MINUTES_PER_DAY);
   totalMinutes -= days * MINUTES_PER_DAY;
-  const hrs = Math.floor(totalMinutes / 60);
-  const mins = totalMinutes % 60;
+  return { negative, days, hrs: Math.floor(totalMinutes / 60), mins: totalMinutes % 60 };
+}
 
+// 「〇日〇時間〇分」の入力値を時間数に戻す(splitAmount の逆)。
+function joinAmount(days, hrs, mins) {
+  return days * HOURS_PER_DAY + hrs + mins / 60;
+}
+
+function formatAmount(hours) {
+  const { negative, days, hrs, mins } = splitAmount(hours);
   const parts = [];
   if (days > 0) parts.push(`${days}日`);
   if (hrs > 0) parts.push(`${hrs}時間`);
   if (mins > 0) parts.push(`${mins}分`);
   if (parts.length === 0) parts.push("0時間");
 
-  return sign + parts.join("");
+  return (negative ? "-" : "") + parts.join("");
 }

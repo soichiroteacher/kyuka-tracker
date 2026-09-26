@@ -115,6 +115,38 @@
   </div>
 </div>
 
+<div id="balance-modal-overlay" class="modal-overlay hidden">
+  <div class="modal">
+    <h3 id="balance-modal-title">付与・繰越の調整</h3>
+    <p class="hint" id="balance-modal-desc"></p>
+    <form id="balance-form">
+      <fieldset>
+        <legend>この年度の付与量</legend>
+        <div class="amount-inputs">
+          <input type="number" id="grant-days" min="0" step="1" placeholder="0"><span>日</span>
+          <input type="number" id="grant-hours" min="0" step="1" placeholder="0"><span>時間</span>
+          <input type="number" id="grant-mins" min="0" max="59" step="1" placeholder="0"><span>分</span>
+        </div>
+        <p class="hint" id="grant-hint"></p>
+      </fieldset>
+      <fieldset>
+        <legend>前年度からの繰越</legend>
+        <div class="amount-inputs">
+          <input type="number" id="carry-days" min="0" step="1" placeholder="0"><span>日</span>
+          <input type="number" id="carry-hours" min="0" step="1" placeholder="0"><span>時間</span>
+          <input type="number" id="carry-mins" min="0" max="59" step="1" placeholder="0"><span>分</span>
+        </div>
+        <p class="hint" id="carry-hint"></p>
+      </fieldset>
+      <div class="modal-actions">
+        <button type="button" id="balance-reset" class="btn-danger">標準に戻す</button>
+        <button type="button" id="balance-cancel" class="btn-secondary">キャンセル</button>
+        <button type="submit" class="btn-primary">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script src="js/storage.js"></script>
 <script src="js/calc.js"></script>
 <script src="js/ui.js"></script>

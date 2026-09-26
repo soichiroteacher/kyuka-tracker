@@ -79,6 +79,19 @@ function renderDashboard() {
     const cycleHtml = type.cycleStartMonth
       ? `<div class="detail cycle-note">サイクル: ${cycleRangeLabel(effectiveStartMonth(appData, type))}(個別設定)</div>`
       : "";
+
+    // 手動調整の状態と、調整画面への入口(付与上限のある種別のみ)。
+    let adjustNoteHtml = "";
+    let adjustBtnHtml = "";
+    if (!unlimited) {
+      const adjusted = [balance.hasGrantOverride ? "付与" : null, balance.hasCarryoverOverride ? "繰越" : null].filter(Boolean);
+      if (adjusted.length > 0) {
+        adjustNoteHtml = `<div class="detail cycle-note">手動で調整済み(${adjusted.join("・")})</div>`;
+      } else if (type.carryoverMax && balance.carryover === 0) {
+        adjustNoteHtml = `<div class="detail cycle-note">繰越は未入力(0として計算中)</div>`;
+      }
+      adjustBtnHtml = `<button type="button" class="link-btn btn-adjust-balance" data-type-id="${escapeHtml(type.id)}">付与・繰越を調整</button>`;
+    }
     return `
       <div class="leave-card ${stateClass}" style="--card-color:${type.color || "#2563eb"}">
         <h3>${escapeHtml(type.name)}</h3>
@@ -86,8 +99,87 @@ function renderDashboard() {
         ${detailHtml}
         ${barHtml}
         ${cycleHtml}
+        ${adjustNoteHtml}
+        ${adjustBtnHtml}
       </div>`;
   }).join("");
+}
+
+// ---------- 付与・繰越の調整(年度ごと) ----------
+// 使い始めが年の途中でも実際の残りに合わせられるよう、選択中の年度について
+// 付与量・前年度からの繰越を手動で入力できる。空欄なら設定/自動計算どおり。
+
+let editingBalanceTypeId = null;
+
+function fillAmountFields(prefix, hours) {
+  const split = hours === null ? null : splitAmount(hours);
+  document.getElementById(`${prefix}-days`).value = split ? split.days : "";
+  document.getElementById(`${prefix}-hours`).value = split ? split.hrs : "";
+  document.getElementById(`${prefix}-mins`).value = split ? split.mins : "";
+}
+
+// 全て空欄なら null(=調整しない)、不正な値なら NaN、それ以外は時間数を返す。
+function readAmountFields(prefix) {
+  const raw = ["days", "hours", "mins"].map(s => document.getElementById(`${prefix}-${s}`).value.trim());
+  if (raw.every(v => v === "")) return null;
+  const [d, h, m] = raw.map(v => (v === "" ? 0 : Number(v)));
+  if ([d, h, m].some(n => !Number.isInteger(n) || n < 0)) return NaN;
+  return joinAmount(d, h, m);
+}
+
+function openBalanceModal(typeId) {
+  const type = findType(typeId);
+  if (!type) return;
+  editingBalanceTypeId = typeId;
+
+  const balance = computeBalance(appData, type, currentYear);
+  const key = adjustmentKey(currentYear, typeId);
+  const startMonth = effectiveStartMonth(appData, type);
+
+  document.getElementById("balance-modal-title").textContent = `${type.name}の付与・繰越を調整`;
+  document.getElementById("balance-modal-desc").textContent =
+    `${yearLabel(currentYear, startMonth)}(${cycleRangeLabel(startMonth)})の分だけに適用されます。`;
+  fillAmountFields("grant", hasOwn(appData.manualGrants, key) ? appData.manualGrants[key] : null);
+  fillAmountFields("carry", hasOwn(appData.manualCarryovers, key) ? appData.manualCarryovers[key] : null);
+  document.getElementById("grant-hint").textContent =
+    `空欄なら設定どおり(${type.annualGrant === null ? "上限なし" : formatAmount(type.annualGrant)})。`;
+  document.getElementById("carry-hint").textContent =
+    `空欄なら前年度の残りから自動計算(現在の自動計算: ${formatAmount(balance.autoCarryover)})。0を入れると繰越なしになります。`;
+
+  document.getElementById("balance-modal-overlay").classList.remove("hidden");
+  document.getElementById("carry-days").focus();
+}
+
+function closeBalanceModal() {
+  document.getElementById("balance-modal-overlay").classList.add("hidden");
+  editingBalanceTypeId = null;
+}
+
+function handleBalanceFormSubmit(e) {
+  e.preventDefault();
+  if (!findType(editingBalanceTypeId)) return;
+  const grant = readAmountFields("grant");
+  const carry = readAmountFields("carry");
+  if (Number.isNaN(grant) || Number.isNaN(carry)) {
+    alert("0以上の整数で入力してください。");
+    return;
+  }
+  const key = adjustmentKey(currentYear, editingBalanceTypeId);
+  if (grant === null) delete appData.manualGrants[key]; else appData.manualGrants[key] = grant;
+  if (carry === null) delete appData.manualCarryovers[key]; else appData.manualCarryovers[key] = carry;
+  saveData(appData);
+  closeBalanceModal();
+  refreshAll();
+}
+
+function resetBalanceOverrides() {
+  if (!findType(editingBalanceTypeId)) return;
+  const key = adjustmentKey(currentYear, editingBalanceTypeId);
+  delete appData.manualGrants[key];
+  delete appData.manualCarryovers[key];
+  saveData(appData);
+  closeBalanceModal();
+  refreshAll();
 }
 
 // ---------- 記録一覧 ----------

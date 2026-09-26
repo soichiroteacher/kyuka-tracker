@@ -319,3 +319,36 @@ h2 {
   #app { padding: 10px 12px 40px; }
   .app-header { flex-direction: column; align-items: flex-start; }
 }
+
+.link-btn {
+  background: none;
+  border: none;
+  padding: 8px 0 0;
+  color: var(--color-primary);
+  font-size: 0.8rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.modal fieldset {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  margin: 0 0 12px;
+  padding: 8px 12px 10px;
+}
+
+.modal legend {
+  padding: 0 4px;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.amount-inputs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.amount-inputs input { width: 54px; padding-left: 6px; padding-right: 6px; }
+.amount-inputs span { margin-right: 6px; font-size: 0.85rem; white-space: nowrap; }

@@ -38,6 +38,7 @@ function defaultData() {
     settings: { fiscalYearStartMonth: 1 },
     leaveTypes: defaultLeaveTypes(),
     manualGrants: {},
+    manualCarryovers: {},
     records: []
   };
 }
@@ -49,6 +50,7 @@ function migrateLeaveData(parsed) {
   if (!parsed.settings) parsed.settings = { fiscalYearStartMonth: 1 };
   if (!Array.isArray(parsed.leaveTypes)) parsed.leaveTypes = defaultLeaveTypes();
   if (!parsed.manualGrants) parsed.manualGrants = {};
+  if (!parsed.manualCarryovers) parsed.manualCarryovers = {};
   if (!Array.isArray(parsed.records)) parsed.records = [];
 
   const toHours = v => Math.round(v * HOURS_PER_DAY * 100) / 100;

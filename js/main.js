@@ -19,6 +19,18 @@ document.addEventListener("DOMContentLoaded", () => {
     renderRecordsTable();
   });
 
+  // 付与・繰越の調整(ダッシュボードのカード内ボタン + モーダル)
+  document.getElementById("dashboard-cards").addEventListener("click", e => {
+    const btn = e.target.closest(".btn-adjust-balance");
+    if (btn) openBalanceModal(btn.dataset.typeId);
+  });
+  document.getElementById("balance-form").addEventListener("submit", handleBalanceFormSubmit);
+  document.getElementById("balance-cancel").addEventListener("click", closeBalanceModal);
+  document.getElementById("balance-reset").addEventListener("click", resetBalanceOverrides);
+  document.getElementById("balance-modal-overlay").addEventListener("click", e => {
+    if (e.target.id === "balance-modal-overlay") closeBalanceModal();
+  });
+
   // 記録の追加ボタン(ダッシュボード・記録一覧の両方)
   document.getElementById("btn-add-record").addEventListener("click", () => openRecordModal(null));
   document.getElementById("btn-add-record-2").addEventListener("click", () => openRecordModal(null));
