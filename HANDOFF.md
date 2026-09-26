@@ -51,7 +51,7 @@
 - **確認は画面で**: `file://` で開くと、この環境のブラウザペインではJSが動かない(静的表示)。ローカルサーバーを立てて確認する。Node/Pythonがないので、PowerShellの `System.Net.HttpListener` で静的ファイルを返す小さなスクリプトを使った(リポジトリには含めていない)。フォルダ名が日本語なので、ルートのパスは引数で渡すこと(スクリプト内に日本語を直書きすると文字化けする)。
 - **確認後は片付ける**: 一時サーバー(PowerShellプロセス)を残すと、フォルダのリネームが「Device or resource busy」で失敗する。テスト用の `localStorage` も削除しておく。
 - **公開後の確認**: pushの約1分後にGitHub Pagesへ反映される。反映状況は https://api.github.com/repos/soichiroteacher/kyuka-tracker/deployments で確認できる。ブラウザのキャッシュで古く見える場合は、`?v=` 付きのHTMLが読まれているかを見る。
-- **更新のたびの手順**(グローバルの `CLAUDE.md` の取り決め): 変更後、アプリフォルダ全体(`.git` を除く)を `C:\Users\idolo\Documents\projects\appcopy\休暇管理アプリ\` にコピーし、`git add` → `commit` → `push` を実行する。force pushは禁止。pushが拒否されたら、force pushで解決せずユーザーに報告する。
+- **更新のたびの手順**(グローバルの `CLAUDE.md` の取り決め): 変更後、アプリフォルダ全体(`.git` を除く)を `C:\Users\idolo\Documents\projects\appcopy\leave-manager\` にコピーし、`git add` → `commit` → `push` を実行する。force pushは禁止。pushが拒否されたら、force pushで解決せずユーザーに報告する。
 - **Git**: 既定のブランチは `main`。ユーザー名・メールはグローバル設定済み。
 
 ## 5. 既知の環境上の問題
