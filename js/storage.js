@@ -104,7 +104,8 @@ function exportDataToFile(data) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `kyuka-data-${localDateStr()}.json`;
+  // 共通ルールに合わせ「アプリ名_バックアップ_日付.json」にする(以前は kyuka-data-日付.json。どちらも読み込める)
+  a.download = `休暇管理_バックアップ_${localDateStr()}.json`;
   document.body.appendChild(a);
   a.click();
   a.remove();

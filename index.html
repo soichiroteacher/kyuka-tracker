@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>休暇管理アプリ</title>
-<link rel="stylesheet" href="css/style.css?v=5366b902">
+<link rel="stylesheet" href="css/style.css?v=c0009e3d">
 </head>
 <body>
 <div id="app">
@@ -20,7 +20,7 @@
   </header>
 
   <nav class="tabs">
-    <button class="tab-btn active" data-tab="dashboard">ダッシュボード</button>
+    <button class="tab-btn active" data-tab="dashboard">取得と残り</button>
     <button class="tab-btn" data-tab="records">記録一覧</button>
     <button class="tab-btn" data-tab="settings">設定</button>
   </nav>
@@ -74,12 +74,12 @@
 
       <h2>データ管理</h2>
       <div class="data-actions">
-        <button id="btn-export" class="btn-secondary">エクスポート(JSON)</button>
-        <button id="btn-import" class="btn-secondary">インポート(JSON)</button>
+        <button id="btn-export" class="btn-secondary">データを書き出す(バックアップ)</button>
+        <button id="btn-import" class="btn-secondary">データを読み込む(復元)</button>
         <input type="file" id="import-file" accept="application/json" class="hidden">
         <button id="btn-reset" class="btn-danger">全データを削除</button>
       </div>
-      <p class="hint">データはこの端末のブラウザ内にのみ保存されます。端末を変える場合やブラウザのデータを消去する前には、エクスポートしておいてください。</p>
+      <p class="hint">データはこの端末のブラウザ内にのみ保存されます。パソコンを変えるときやブラウザのデータを消す前、また月に1回程度は「データを書き出す(バックアップ)」をしてください。</p>
     </section>
   </main>
 </div>
@@ -147,9 +147,9 @@
   </div>
 </div>
 
-<script src="js/storage.js?v=5366b902"></script>
-<script src="js/calc.js?v=5366b902"></script>
-<script src="js/ui.js?v=5366b902"></script>
-<script src="js/main.js?v=5366b902"></script>
+<script src="js/storage.js?v=c0009e3d"></script>
+<script src="js/calc.js?v=c0009e3d"></script>
+<script src="js/ui.js?v=c0009e3d"></script>
+<script src="js/main.js?v=c0009e3d"></script>
 </body>
 </html>

@@ -446,14 +446,14 @@ function handleImportFile(file) {
       if (!parsed || !Array.isArray(parsed.leaveTypes) || !Array.isArray(parsed.records)) {
         throw new Error("invalid format");
       }
-      if (!confirm("現在のデータを、インポートするファイルの内容で上書きします。よろしいですか？")) return;
+      if (!confirm("今のデータを、選んだバックアップの内容で置き換えます。今のデータは元に戻せません。よろしいですか？")) return;
       appData = migrateLeaveData(parsed);
       saveData(appData);
       currentYear = currentYearFromToday();
       refreshAll();
-      alert("インポートが完了しました。");
+      alert("バックアップから復元しました。");
     } catch (e) {
-      alert("ファイルの読み込みに失敗しました。正しいエクスポートファイルか確認してください。");
+      alert("ファイルを読み込めませんでした。「データを書き出す(バックアップ)」で作ったファイル(休暇管理_バックアップ_日付.json)を選んでください。");
     }
   };
   reader.readAsText(file);
