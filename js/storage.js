@@ -1,7 +1,12 @@
 // データの永続化(localStorage)と初期データを扱うモジュール。
 // ブラウザだけで完結させるため、サーバーやビルド処理は使わない。
 
-const STORAGE_KEY = "kyuka-tracker-data-v1";
+// ブラウザの保存領域でのデータの名前。アプリ名(フォルダ名 leave-manager)にそろえている。
+const STORAGE_KEY = "leave-manager-data-v1";
+// 2026-09-27 より前の名前(GitHubのリポジトリ名が kyuka-tracker だったころ)。
+// 新しい名前のデータがまだ無いときだけ、ここから写して使う(loadData)。
+// 写したあとも古い名前のデータは消さずに残す(万一のときの控え。消しても動作には影響しない)。
+const OLD_STORAGE_KEY = "kyuka-tracker-data-v1";
 
 function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -78,6 +83,11 @@ function migrateLeaveData(parsed) {
 }
 
 function loadData() {
+  // 以前の名前で保存されたデータしか無ければ、新しい名前に写してから読み込む。
+  if (localStorage.getItem(STORAGE_KEY) === null) {
+    const old = localStorage.getItem(OLD_STORAGE_KEY);
+    if (old !== null) localStorage.setItem(STORAGE_KEY, old);
+  }
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) {
     const data = defaultData();

@@ -11,7 +11,7 @@
 - 東京都教職員向けの、年休・特別休暇の取得記録と残り時間の管理アプリ(1人用)。
 - 公開URL: https://soichiroteacher.github.io/leave-manager/ (GitHub Pages、`main` ブランチ直下)
 - リポジトリ: https://github.com/soichiroteacher/leave-manager (2026-09-27 に旧名から改名。旧名のURLも GitHub が自動で転送するが、GitHub Pages の旧URLは表示されなくなった) (**Public**。実データ・個人情報は絶対に入れない)
-- 作りは HTML/CSS/JS のみ(ビルド不要、ES modules不使用)。データはブラウザの `localStorage`(キー `kyuka-tracker-data-v1`)にだけ保存し、外部へは送らない。
+- 作りは HTML/CSS/JS のみ(ビルド不要、ES modules不使用)。データはブラウザの `localStorage`(キー `leave-manager-data-v1`。2026-09-27 に `kyuka-tracker-data-v1` から変更し、古いキーのデータしか無いときは自動で写す。古いキーは控えとして消さずに残す)にだけ保存し、外部へは送らない。
 - Googleドライブ連携は一度作ったが、方針変更で**削除済み**(コミット `511dd36`)。今後もデータは端末内のみで運用する。
 
 ## 2. 現在の状態
