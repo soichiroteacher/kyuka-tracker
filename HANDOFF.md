@@ -9,8 +9,8 @@
 ## 1. アプリの概要
 
 - 東京都教職員向けの、年休・特別休暇の取得記録と残り時間の管理アプリ(1人用)。
-- 公開URL: https://soichiroteacher.github.io/kyuka-tracker/ (GitHub Pages、`main` ブランチ直下)
-- リポジトリ: https://github.com/soichiroteacher/kyuka-tracker (**Public**。実データ・個人情報は絶対に入れない)
+- 公開URL: https://soichiroteacher.github.io/leave-manager/ (GitHub Pages、`main` ブランチ直下)
+- リポジトリ: https://github.com/soichiroteacher/leave-manager (2026-09-27 に旧名から改名。旧名のURLも GitHub が自動で転送するが、GitHub Pages の旧URLは表示されなくなった) (**Public**。実データ・個人情報は絶対に入れない)
 - 作りは HTML/CSS/JS のみ(ビルド不要、ES modules不使用)。データはブラウザの `localStorage`(キー `kyuka-tracker-data-v1`)にだけ保存し、外部へは送らない。
 - Googleドライブ連携は一度作ったが、方針変更で**削除済み**(コミット `511dd36`)。今後もデータは端末内のみで運用する。
 
@@ -54,7 +54,7 @@
 
 - **確認は画面で**: `file://` で開くと、この環境のブラウザペインではJSが動かない(静的表示)。ローカルサーバーを立てて確認する。Node/Pythonがないので、PowerShellの `System.Net.HttpListener` で静的ファイルを返す小さなスクリプトを使った(リポジトリには含めていない)。フォルダ名が日本語なので、ルートのパスは引数で渡すこと(スクリプト内に日本語を直書きすると文字化けする)。
 - **確認後は片付ける**: 一時サーバー(PowerShellプロセス)を残すと、フォルダのリネームが「Device or resource busy」で失敗する。テスト用の `localStorage` も削除しておく。
-- **公開後の確認**: pushの約1分後にGitHub Pagesへ反映される。反映状況は https://api.github.com/repos/soichiroteacher/kyuka-tracker/deployments で確認できる。ブラウザのキャッシュで古く見える場合は、`?v=` 付きのHTMLが読まれているかを見る。
+- **公開後の確認**: pushの約1分後にGitHub Pagesへ反映される。反映状況は https://api.github.com/repos/soichiroteacher/leave-manager/deployments で確認できる。ブラウザのキャッシュで古く見える場合は、`?v=` 付きのHTMLが読まれているかを見る。
 - **更新のたびの手順**(グローバルの `CLAUDE.md` の取り決め): 変更後、アプリフォルダ全体(`.git` を除く)を `C:\Users\idolo\Documents\projects\appcopy\leave-manager\` にコピーし、`git add` → `commit` → `push` を実行する。force pushは禁止。pushが拒否されたら、force pushで解決せずユーザーに報告する。
 - **Git**: 既定のブランチは `main`。ユーザー名・メールはグローバル設定済み。
 
